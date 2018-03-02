@@ -6,9 +6,9 @@ import java.io.File;
 /*
     Project: Predictive Analytics for Re-order of data
     Made By: Garrett VanBuskirk
-    StudentID: 010691035
+    StudentID: 
     Purpose: Capstone Project for WalMart
-    Authorization: I do not authorize anyone outside of WalMart or Dr. Patitz to alter my code
+    Authorization: 
 */
 
 
