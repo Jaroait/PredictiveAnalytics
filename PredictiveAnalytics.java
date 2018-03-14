@@ -6,13 +6,15 @@ import java.io.File;
 /*
     Project: Predictive Analytics for Re-order of data
     Made By: Garrett VanBuskirk
-    StudentID: 
+    StudentID: 010691035
     Purpose: Capstone Project for WalMart
-    Authorization: 
 */
 
 
 public class PredictiveAnalytics {
+
+    static int[] lowerBoundsPreGrowth;
+    static int[] upperBoundsPreGrowth;
 
     public static void testPrint(String[] items, int[] lowerBounds, int[] upperBounds){
         for(int i = 0; i < items.length; i++){
@@ -88,14 +90,89 @@ public class PredictiveAnalytics {
         */
         return accuracy;
     }
+        
+    public static double ExponentialGrowth(int[] a, int lowerUpper){ //0 = lower, 1 = upper
+        //Original array
+        int[] temp = new int[a.length];
+        for(int i = 0; i < a.length; i++){
+          temp[i] = a[i];
+        }
+        
+        Arrays.sort(temp);
+        
+        //Count for correct positions
+        int count = 0;
+        
+        //Store positions for double check if overall not growth.
+        boolean[] positionCheck = new boolean[a.length];
+        
+        //Calculate
+        for(int i = 0; i < a.length; i++){
+          if(a[i] == temp[i]){
+            positionCheck[i] = true;
+            count++;
+          }
+          else{
+            positionCheck[i] = false;
+          }
+        }
+          
+        //First check of overall growth
+        if((double) count/a.length >= .5){
+          return (double) (((double)count/a.length)/10)+1;
+        }
+        else{
+          count = 0;
+          double SixtyPercentOfSize = (a.length*.6);
+          int newSize = (int) SixtyPercentOfSize;
+          if(lowerUpper == 0){
+            for(int i = 0; i < newSize; i++){
+              if(positionCheck[i]){
+                count++;
+              }
+            }
+            if((double) count/newSize >= .5){
+              return (double) (((double)count/a.length)/10)+1;
+            }
+            else{
+              //No growth detected on lower bound either
+              return (double) 1;
+            }
+          }
+          else if(lowerUpper == 1){
+            for(int i = a.length - newSize; i < a.length; i++){
+              if(positionCheck[i]){
+                count++;
+              }
+            }
+            if((double) count/newSize >= .5){
+              return (double) (((double)count/a.length)/10)+1;
+            }
+            else{
+              //No growth detected on upper bound either
+              return (double) 1;
+            }
+          }
+          return (double) 1; //Never executed unless bad parameters.
+        }
+    }
 
     //Calculate the Lower Boundary for an Item
     public static int lowerBound(int[] a){ //TODO: Algorithm used to calculate lower boundary
         int lower = 0;
 
+        //Calculate for exponential growth
+        double ExponentialGrowth = ExponentialGrowth(a, 0);
+
+        //Original array
+        int[] temp = new int[a.length];
+        for(int i = 0; i < a.length; i++){
+          temp[i] = a[i];
+        }
+        
         //Only want the lower 60%.
-        Arrays.sort(a);
-        double SixtyPercentOfSize = (a.length*.6);
+        Arrays.sort(temp);
+        double SixtyPercentOfSize = (temp.length*.6);
         int newSize = (int) SixtyPercentOfSize;
 
         //Mean calculation variables
@@ -105,9 +182,9 @@ public class PredictiveAnalytics {
         //Loop through data
         for(int i = 0; i < newSize; i++){
             //Mean calculations
-            total+= a[i];
+            total+= temp[i];
 
-            newA[i] = a[i];
+            newA[i] = temp[i];
 
         }
 
@@ -126,10 +203,9 @@ public class PredictiveAnalytics {
         //Weigh Median and Mean Evenly, use to calculate
         double PreExponential = (mean + median)/2;
 
-        //TODO: Check For Exponential Growth
-        //lower = ExponentialGrowth(PreExponential);
+        double PostExponential = ExponentialGrowth * PreExponential;
 
-        lower = (int) PreExponential;
+        lower = (int) PostExponential;
 
         //Add-ons:
         //Including Accuracy of prediction
@@ -141,19 +217,28 @@ public class PredictiveAnalytics {
     public static int upperBound(int[] a){ //TODO: Algorithm used to calculate upper boundary
         int upper = 0;
 
+        //Calculate for exponential growth
+        double ExponentialGrowth = ExponentialGrowth(a, 1);
+
+        //Original array
+        int[] temp = new int[a.length];
+        for(int i = 0; i < a.length; i++){
+          temp[i] = a[i];
+        }
+        
         //Only want the upper 60%.
-        Arrays.sort(a);
-        double SixtyPercentOfSize = (a.length*.6);
+        Arrays.sort(temp);
+        double SixtyPercentOfSize = (temp.length*.6);
         int newSize = (int) SixtyPercentOfSize;
 
         int total = 0;
         int[] newA = new int[newSize];
 
         //Loop through data
-        for(int i = a.length - newSize; i < a.length; i++){
+        for(int i = temp.length - newSize; i < temp.length; i++){
             //Mean calculations
-            total+= a[i];
-            newA[i-(a.length-newSize)] = a[i];
+            total+= temp[i];
+            newA[i-(temp.length-newSize)] = temp[i];
         }
 
         //Mean calculation
@@ -171,10 +256,9 @@ public class PredictiveAnalytics {
         //Weigh Median and Mean Evenly, use to calculate
         double PreExponential = (mean + median)/2;
 
-        //TODO Check For Exponential Growth
-        //upper = ExponentialGrowth(PreExponential);
+        double PostExponential = ExponentialGrowth * PreExponential;
 
-        upper = (int) PreExponential;
+        upper = (int) PostExponential;
 
         //Add-ons:
         //Including Accuracy of prediction
@@ -252,6 +336,7 @@ public class PredictiveAnalytics {
         int[] lowerBounds = new int[items.length];
         int[] upperBounds = new int[items.length];
 
+
         for(int i = 0; i < items.length; i++){ //Should loop according to number of items
             //Store lower and upper bounds according to number of items we have
             lowerBounds[i] = lowerBound(itemData[i]);
@@ -260,8 +345,10 @@ public class PredictiveAnalytics {
         //Upper and Lower bounds made
 
         //Test Print to see similarities
+        System.out.println("\nCalculated with growth:\n");
         testPrint(items, lowerBounds, upperBounds);
 
+        
         //Accuracy array to store accuracy for each item
         double[] accuracies = new double[items.length];
 
